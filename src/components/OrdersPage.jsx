@@ -7,13 +7,13 @@ export default function OrdersPage() {
     const [searchTerm, setSearchTerm] = useState("");
     const [isModalOpen, setIsModalOpen] = useState(false);
 
-    // Cập nhật cấu hình Form lưu trữ trường dữ liệu quantity
+    // Cấu hình Form lưu trữ dữ liệu đơn hàng
     const [formData, setFormData] = useState({
         customer_name: '',
-        product_name: 'Thép cuộn Phi 6 Hòa Phát', // Tên khớp chuẩn với mẫu DB ban đầu
+        product_name: 'Thép cuộn Phi 6 Hòa Phát',
         amount: '',
         status: 'Pending',
-        quantity: 1 // Mặc định đặt mua từ 1 sản phẩm
+        quantity: 1
     });
 
     const fetchOrders = () => {
@@ -26,6 +26,15 @@ export default function OrdersPage() {
         fetchOrders();
     }, []);
 
+    // Hàm cập nhật Input dùng chung giúp tránh lỗi "đóng băng" thẻ select/input trong React
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({
+            ...prev,
+            [name]: value
+        }));
+    };
+
     const handleSubmit = (e) => {
         e.preventDefault();
 
@@ -34,11 +43,17 @@ export default function OrdersPage() {
             quantity: parseInt(formData.quantity, 10) || 1
         };
 
-        // Đảm bảo đường dẫn gọi đúng endpoint này
         axios.post('http://127.0.0.1:8000/api/dashboard/orders', dataToSend)
             .then(() => {
                 setIsModalOpen(false);
-                setFormData({ customer_name: '', product_name: 'Thép cuộn Phi 6 Hòa Phát', amount: '', status: 'Pending', quantity: 1 });
+                // Reset form về trạng thái ban đầu sạch sẽ
+                setFormData({
+                    customer_name: '',
+                    product_name: 'Thép cuộn Phi 6 Hòa Phát',
+                    amount: '',
+                    status: 'Pending',
+                    quantity: 1
+                });
                 fetchOrders();
             })
             .catch(err => {
@@ -166,7 +181,7 @@ export default function OrdersPage() {
                 </div>
             </div>
 
-            {/* MODAL TẠO ĐƠN HÀNG MỚI ĐÃ ĐƯỢC TÍCH HỢP Ô NHẬP SỐ LƯỢNG */}
+            {/* MODAL TẠO ĐƠN HÀNG MỚI */}
             {isModalOpen && (
                 <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
                     <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-xl border border-gray-100 relative mx-4">
@@ -174,29 +189,28 @@ export default function OrdersPage() {
                         <h2 className="text-xl font-bold text-gray-800 mb-4">Tạo Đơn Hàng Vật Tư Mới</h2>
 
                         <form onSubmit={handleSubmit} className="space-y-4">
-
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Tên Nhà Thầu / Công Ty</label>
                                 <input
                                     type="text"
+                                    name="customer_name"
                                     required
                                     placeholder="Ví dụ: Công ty Xây dựng Coteccons"
                                     className="w-full px-3 py-2 rounded-xl border border-gray-200 outline-none text-sm focus:border-indigo-500 transition-colors"
                                     value={formData.customer_name}
-                                    onChange={(e) => setFormData({ ...formData, customer_name: e.target.value })}
+                                    onChange={handleInputChange}
                                 />
                             </div>
-
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Chọn Loại Vật Tư</label>
                                     <select
+                                        name="product_name"
                                         className="w-full px-3 py-2 rounded-xl border border-gray-200 outline-none text-sm focus:border-indigo-500 transition-colors bg-white"
                                         value={formData.product_name}
-                                        onChange={(e) => setFormData({ ...formData, product_name: e.target.value })}
+                                        onChange={handleInputChange}
                                     >
-
                                         <option value="Thép cuộn Phi 6 Hòa Phát">Thép cuộn Phi 6 Hòa Phát</option>
                                         <option value="Xi măng Insee Đa Dụng PCB40">Xi măng Insee Đa Dụng PCB40</option>
                                         <option value="Gạch ống Tuynel 8x18">Gạch ống Tuynel 8x18</option>
@@ -206,23 +220,37 @@ export default function OrdersPage() {
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Số Lượng Đặt</label>
                                     <input
                                         type="number"
+                                        name="quantity"
                                         min="1"
                                         required
                                         className="w-full px-3 py-2 rounded-xl border border-gray-200 outline-none text-sm focus:border-indigo-500 transition-colors"
                                         value={formData.quantity}
-                                        onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
+                                        onChange={handleInputChange}
                                     />
                                 </div>
                             </div>
 
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Tổng Giá Trị Đơn Hàng</label>
-                                <input type="text" required placeholder="Ví dụ: 12,000,000 đ" className="w-full px-3 py-2 rounded-xl border border-gray-200 outline-none text-sm focus:border-indigo-500 transition-colors" value={formData.amount} onChange={(e) => setFormData({ ...formData, amount: e.target.value })} />
+                                <input
+                                    type="text"
+                                    name="amount"
+                                    required
+                                    placeholder="Ví dụ: 12,000,000 đ"
+                                    className="w-full px-3 py-2 rounded-xl border border-gray-200 outline-none text-sm focus:border-indigo-500 transition-colors"
+                                    value={formData.amount}
+                                    onChange={handleInputChange}
+                                />
                             </div>
 
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Trạng Thái</label>
-                                <select className="w-full px-3 py-2 rounded-xl border border-gray-200 outline-none text-sm focus:border-indigo-500 transition-colors bg-white" value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value })}>
+                                <select
+                                    name="status"
+                                    className="w-full px-3 py-2 rounded-xl border border-gray-200 outline-none text-sm focus:border-indigo-500 transition-colors bg-white"
+                                    value={formData.status}
+                                    onChange={handleInputChange}
+                                >
                                     <option value="Pending">Đang xử lý (Trừ kho)</option>
                                     <option value="Completed">Đã hoàn thành (Trừ kho)</option>
                                 </select>

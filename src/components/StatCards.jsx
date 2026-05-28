@@ -3,7 +3,7 @@ import { DollarSign, ShoppingBag, Layers, Users, ArrowUpRight } from 'lucide-rea
 import axios from 'axios';
 
 export default function StatCards() {
-    // Khởi tạo trạng thái lưu dữ liệu thống kê động
+    // Khởi tạo trạng thái lưu dữ liệu thống kê động ban đầu
     const [stats, setStats] = useState({
         total_revenue: "0 đ",
         new_orders: "0 đơn",
@@ -11,12 +11,29 @@ export default function StatCards() {
         customer_count: "0 nhà thầu",
         revenue_change: "+0%"
     });
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        // Gọi API lấy dữ liệu biểu đồ doanh thu động từ Backend
-        axios.get('http://127.0.0.1:8000/api/dashboard/chart')
-            .then(res => setChartData(res.data))
-            .catch(err => console.error("Lỗi tải biểu đồ động:", err));
+        // SỬA ĐỔI: Gọi đúng endpoint lấy dữ liệu tổng hợp (stats) thay vì dữ liệu biểu đồ (chart)
+        axios.get('http://127.0.0.1:8000/api/dashboard/stats')
+            .then(res => {
+                // SỬA ĐỔI: Sử dụng setStats để cập nhật dữ liệu thay vì setChartData không tồn tại
+                if (res.data) {
+                    setStats({
+                        total_revenue: res.data.total_revenue || "0 đ",
+                        new_orders: res.data.new_orders || "0 đơn",
+                        stock_count: res.data.stock_count || "0",
+                        customer_count: res.data.customer_count || "0 nhà thầu",
+                        revenue_change: res.data.revenue_change || "+0%"
+                    });
+                }
+            })
+            .catch(err => {
+                console.error("Lỗi tải dữ liệu thống kê tổng quan Dashboard:", err);
+            })
+            .finally(() => {
+                setIsLoading(false);
+            });
     }, []);
 
     // Cấu trúc danh sách các thẻ thống kê
@@ -31,14 +48,14 @@ export default function StatCards() {
         {
             title: "Tổng Đơn Hàng Hệ Thống",
             value: stats.new_orders,
-            change: "+3 đơn mới",
+            change: "+3 đơn mới", // Có thể đổi thành stats.orders_change nếu backend hỗ trợ
             icon: ShoppingBag,
             color: "bg-indigo-50 text-indigo-600"
         },
         {
             title: "Tổng Vật Tư Tồn Kho",
             value: stats.stock_count,
-            change: "Dữ liệu kho thực tế",
+            change: "Đủ cung ứng",
             icon: Layers,
             color: "bg-amber-50 text-amber-600"
         },
@@ -61,9 +78,16 @@ export default function StatCards() {
                             <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider block">
                                 {card.title}
                             </span>
-                            <h2 className="text-2xl font-extrabold text-gray-900">
-                                {card.value}
-                            </h2>
+
+                            {isLoading ? (
+                                // Hiệu ứng loading nhẹ trong lúc đợi API phản hồi
+                                <div className="h-8 w-24 bg-gray-100 animate-pulse rounded-lg"></div>
+                            ) : (
+                                <h2 className="text-2xl font-extrabold text-gray-900">
+                                    {card.value}
+                                </h2>
+                            )}
+
                             <span className="text-xs text-emerald-600 font-medium flex items-center gap-0.5">
                                 <ArrowUpRight className="w-3 h-3" /> {card.change}
                             </span>

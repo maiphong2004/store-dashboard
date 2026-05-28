@@ -1,13 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import api from '../api';
+import axios from 'axios'; // Đồng bộ sử dụng axios thuần để tránh lỗi cấu trúc của instance api
 
 export default function RecentOrders() {
     const [orders, setOrders] = useState([]);
 
     useEffect(() => {
-        api.get('/recent-orders')
-            .then(res => setOrders(res.data))
-            .catch(err => console.error("Lỗi khi tải danh sách đơn hàng:", err));
+        // Đồng bộ chính xác tuyệt đối đường dẫn API giống như các trang quản lý khác
+        axios.get('http://127.0.0.1:8000/api/dashboard/recent-orders')
+            .then(res => {
+                // Đảm bảo dữ liệu nhận được luôn là mảng, nếu không sẽ gán mảng rỗng
+                setOrders(Array.isArray(res.data) ? res.data : []);
+            })
+            .catch(err => {
+                console.error("Lỗi khi tải danh sách đơn hàng gần đây:", err);
+                setOrders([]); // Đảm bảo không bị lỗi giao diện nếu API sập
+            });
     }, []);
 
     return (
@@ -28,22 +35,32 @@ export default function RecentOrders() {
                         </tr>
                     </thead>
                     <tbody className="text-gray-600 text-sm">
-                        {orders.map((order) => (
-                            <tr key={order.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition">
-                                <td className="py-4 font-semibold text-gray-700">#{order.id}</td>
-                                <td className="py-4">{order.customer_name}</td>
-                                <td className="py-4">{order.product_name}</td>
-                                <td className="py-4 text-gray-400">{order.date}</td>
-                                <td className="py-4 font-medium text-gray-800">{order.amount}</td>
-                                <td className="py-4">
-                                    <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${order.status === 'Completed' ? 'bg-emerald-50 text-emerald-600' :
-                                            order.status === 'Pending' ? 'bg-amber-50 text-amber-600' : 'bg-rose-50 text-rose-600'
-                                        }`}>
-                                        {order.status === 'Completed' ? 'Đã hoàn thành' : order.status === 'Pending' ? 'Đang xử lý' : 'Đã hủy'}
-                                    </span>
+                        {/* TỐI ƯU LOGIC: Kiểm tra an toàn trước khi duyệt mảng để tránh sập màn hình trắng */}
+                        {orders.length > 0 ? (
+                            orders.map((order) => (
+                                <tr key={order.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
+                                    <td className="py-4 font-semibold text-gray-700">#{order.id}</td>
+                                    <td className="py-4 font-medium text-gray-800">{order.customer_name}</td>
+                                    <td className="py-4 text-gray-500">{order.product_name}</td>
+                                    <td className="py-4 text-gray-400">{order.date}</td>
+                                    <td className="py-4 font-semibold text-gray-800">{order.amount}</td>
+                                    <td className="py-4">
+                                        <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${order.status === 'Completed' ? 'bg-emerald-50 text-emerald-600' :
+                                                order.status === 'Pending' ? 'bg-amber-50 text-amber-600' :
+                                                    'bg-rose-50 text-rose-600'
+                                            }`}>
+                                            {order.status === 'Completed' ? 'Đã hoàn thành' : order.status === 'Pending' ? 'Đang xử lý' : 'Đã hủy'}
+                                        </span>
+                                    </td>
+                                </tr>
+                            ))
+                        ) : (
+                            <tr>
+                                <td colSpan="6" className="py-8 text-center text-gray-400 bg-white">
+                                    Chưa ghi nhận đơn hàng nào phát sinh gần đây.
                                 </td>
                             </tr>
-                        ))}
+                        )}
                     </tbody>
                 </table>
             </div>

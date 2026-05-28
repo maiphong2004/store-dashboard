@@ -37,8 +37,7 @@ export default function CustomersPage() {
             axios.put(`http://127.0.0.1:8000/api/dashboard/customers/${editingId}`, formData)
                 .then(() => {
                     setIsModalOpen(false);
-                    setEditingId(null);
-                    resetForm();
+                    resetForm(); // Đã bao gồm setEditingId(null) bên trong
                     fetchCustomers();
                 })
                 .catch(err => console.error("Lỗi sửa nhà thầu:", err));
@@ -76,7 +75,9 @@ export default function CustomersPage() {
         }
     };
 
+    // SỬA ĐỔI: Đồng bộ đưa editingId về null khi dọn dẹp Form để không bị lẫn lộn giữa Thêm và Sửa
     const resetForm = () => {
+        setEditingId(null);
         setFormData({ name: '', phone: '', address: '', tax_code: '', status: 'Active' });
     };
 
@@ -98,7 +99,7 @@ export default function CustomersPage() {
                     <p className="text-sm text-gray-500 mt-1">Hồ sơ thông tin danh bạ nhà thầu cung ứng và thi công dự án.</p>
                 </div>
                 <button
-                    onClick={() => { resetForm(); setEditingId(null); setIsModalOpen(true); }}
+                    onClick={() => { resetForm(); setIsModalOpen(true); }}
                     className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl text-sm font-medium shadow-sm transition-colors w-fit"
                 >
                     <Plus className="w-4 h-4" /> Thêm nhà thầu mới
@@ -122,7 +123,7 @@ export default function CustomersPage() {
                 </button>
             </div>
 
-            {/* Danh sách hiển thị dạng Card lưới cho scannable trực quan */}
+            {/* Danh sách hiển thị dạng Card lưới */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredCustomers.length > 0 ? (
                     filteredCustomers.map((customer) => (
@@ -137,13 +138,13 @@ export default function CustomersPage() {
                                     </span>
                                 </div>
 
-                                {/* KHỐI HIỂN THỊ HẠNG NHÀ THẦU & ƯU ĐÃI MỚI */}
+                                {/* TỐI ƯU: Thêm giá trị fallback đề phòng trường hợp API trả về thuộc tính null/undefined */}
                                 <div className="flex items-center gap-2 bg-slate-50 p-2 rounded-xl border border-slate-100/50">
                                     <div className="text-xs font-bold text-slate-700">
-                                        {customer.rank}
+                                        {customer.rank || "Chưa xếp hạng"}
                                     </div>
                                     <span className="text-[10px] bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded-md font-medium">
-                                        {customer.discount}
+                                        {customer.discount || "0% Ưu đãi"}
                                     </span>
                                 </div>
 
@@ -163,11 +164,11 @@ export default function CustomersPage() {
                                 </div>
                             </div>
 
-                            {/* KHỐI HIỂN THỊ TỔNG TIỀN TÍCH LŨY MỚI */}
+                            {/* TỐI ƯU: Thêm toán tử logic `|| 0` để hàm gán đơn vị tiền tệ nội địa không bị crash giao diện */}
                             <div className="bg-indigo-50/40 p-3 rounded-xl flex justify-between items-center text-sm">
                                 <span className="text-gray-500 font-medium">Tích lũy đơn hàng:</span>
                                 <span className="font-bold text-indigo-600">
-                                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(customer.total_spent)}
+                                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(customer.total_spent || 0)}
                                 </span>
                             </div>
 
